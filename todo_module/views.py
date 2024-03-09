@@ -1,7 +1,10 @@
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.decorators import api_view
+from rest_framework.views import APIView
+
 from .models import Todo
 from .serializers import TodoSerializer
 from rest_framework import status
@@ -9,6 +12,7 @@ from rest_framework import status
 
 # Create your views here.
 
+# region Function Based Views
 @api_view(['Get', 'Post'])
 def get_all_todos(request: Request):
     if request.method == 'GET':
@@ -41,3 +45,50 @@ def get_todo_detail(request: Request, pk: int):
     elif request.method == 'DELETE':
         todo.delete()
         return Response(None, status.HTTP_204_NO_CONTENT)
+
+
+# endregion
+
+# region Class Based Views
+
+class TodosListView(APIView):
+
+    def get(self, request: Request):
+        todos = Todo.objects.order_by('priority').all()
+        serializer = TodoSerializer(todos, many=True)
+        return Response(serializer.data, status.HTTP_200_OK)
+
+    def post(self, request: Request):
+        serializer = TodoSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status.HTTP_201_CREATED)
+        return Response(None, status.HTTP_400_BAD_REQUEST)
+
+
+class TodosDetailView(APIView):
+
+    def get_object(self, pk: int):
+        try:
+            return Todo.objects.get(pk=pk)
+        except Todo.DoesNotExist:
+            raise Http404
+
+    def get(self, request: Request, pk: int):
+        todo = self.get_object(pk=pk)
+        serializer = TodoSerializer(todo)
+        return Response(serializer.data, status.HTTP_200_OK)
+
+    def put(self, request: Request, pk: int):
+        todo = self.get_object(pk=pk)
+        serializer = TodoSerializer(todo, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status.HTTP_200_OK)
+        return Response(None, status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request: Request, pk: int):
+        todo = self.get_object(pk=pk)
+        todo.delete()
+        return Response(None, status.HTTP_204_NO_CONTENT)
+# endregion
