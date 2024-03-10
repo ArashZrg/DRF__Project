@@ -4,7 +4,7 @@ This is a project aimed at learning and becoming familiar with the concepts and 
 
 ## HTTP Request Methods
 
-In this project, five HTTP request methods were implemented:
+The HTTP request methods are implemented in five way : 
 
 1. Function-based views
 2. Class-based views
